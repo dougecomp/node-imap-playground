@@ -1,0 +1,25 @@
+{
+  "name": "imap-playground",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dougecomp/node-imap-playground.git"
+  },
+  "keywords": [],
+  "author": "Douglas Silva",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dougecomp/node-imap-playground/issues"
+  },
+  "homepage": "https://github.com/dougecomp/node-imap-playground#readme",
+  "dependencies": {
+    "dotenv": "^16.0.3",
+    "mailparser": "^3.5.0",
+    "node-imap": "^0.9.6"
+  }
+}
