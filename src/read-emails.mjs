@@ -26,10 +26,7 @@ async function loadEmails () {
           const foundMessage = imap.fetch(id, fetchOptions)
           foundMessage.on('message', (message) => {
             message.on('body', async (stream) => {
-              console.log('🚀 ~ file: read-emails.mjs:18 ~ message.on', 'Received body event')
               const emailMessage = await simpleParser(stream)
-              console.log('🚀 ~ file: read-emails.mjs:22 ~ message.on ~ emailMessage.from', emailMessage.from)
-              console.log('🚀 ~ file: read-emails.mjs:23 ~ message.on ~ emailMessage.to', emailMessage.to)
               emailsRead.push({
                 id,
                 from: {
