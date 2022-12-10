@@ -70,7 +70,7 @@ async function loadEmails () {
 
 loadEmails()
 .then(data => {
-  fs.writeFileSync('read-emails.json', JSON.stringify(data))
+  fs.writeFileSync('example-result-read-emails.json', JSON.stringify(data))
 })
 .catch(error => {
   console.log(error);
