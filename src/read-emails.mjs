@@ -1,54 +1,77 @@
-import 'dotenv/config'
+import fs from 'node:fs'
 
-import { promisify } from 'node:util'
-
-import Imap from 'node-imap'
 import { simpleParser } from 'mailparser'
 
-function getEmails () {
-  try {
-    const imap = new Imap({
-      host: process.env.MAIL_IMAP_HOST,
-      port: process.env.MAIL_IMAP_PORT,
-      tls: process.env.MAIL_SECURITY ? true : false,
-      user: process.env.MAIL_LOGIN,
-      password: process.env.MAIL_PASSWORD
-    })
-    const openBox = promisify(imap.openBox)
-    const search = promisify(imap.search)
-    
-    imap.once('ready', async () => {
-      console.log('ready');
-      await openBox('INBOX')
-      const ids = await search(['UNSEEN', ['SINCE', new Date(2022, 11, 20)]])
-      const foundMessages = imap.fetch(ids)
-      foundMessages.on('message', (message) => {
-        message.on('body', async (stream) => {
-          const {from, to, subject, html, text} = await simpleParser(stream)
-          console.log(from, to, subject, html, text);
-        })
-        message.once('attributes', attributtes => {
-          const { uid } = attributtes
-        })
-      })
-      foundMessages.once('end', () => {
-        console.log('Done fetching messages');
-        imap.end()
-      })
-    })
-    
-    imap.once('error', function(err) {
-      console.log(err);
-    });
-     
-    imap.once('end', function() {
-      console.log('Connection ended');
-    });
-    
-    imap.connect()
-  } catch (error) {
-    console.log('an error occurred' + error);
-  }
+import { getImap } from './imap.mjs'
+
+const criteria = [
+  'UNSEEN',
+  ['SINCE', new Date()]
+]
+const fetchOptions = {
+  bodies: ''
 }
 
-getEmails()
+function isLastEmailWasRead (ids, emailsRead) {
+  return ids.length === emailsRead.length
+}
+
+async function loadEmails () {
+  const imap = await getImap()
+  const emailsRead = []
+  return new Promise(async (resolve, reject) => {
+    try {
+      const ids = await imap.searchAsync(criteria)
+        for (const id of ids) {
+          const foundMessage = imap.fetch(id, fetchOptions)
+          foundMessage.on('message', (message) => {
+            message.on('body', async (stream) => {
+              console.log('🚀 ~ file: read-emails.mjs:18 ~ message.on', 'Received body event')
+              const emailMessage = await simpleParser(stream)
+              console.log('🚀 ~ file: read-emails.mjs:22 ~ message.on ~ emailMessage.from', emailMessage.from)
+              console.log('🚀 ~ file: read-emails.mjs:23 ~ message.on ~ emailMessage.to', emailMessage.to)
+              emailsRead.push({
+                id,
+                from: {
+                  address: emailMessage.from.value[0].address,
+                  name: emailMessage.from.value[0].name,
+                },
+                to: {
+                  address: emailMessage.to.value[0].address,
+                  name: emailMessage.to.value[0].name,
+                },
+                subject: emailMessage.subject,
+                body: emailMessage.html || emailMessage.textAsHtml
+              })
+              if (isLastEmailWasRead(ids, emailsRead)) imap.end()
+            })
+          })
+          foundMessage.on('error', (error) => {
+            console.log(error);
+            reject(error)
+          })
+        }
+      
+      imap.once('error', function(error) {
+        console.log(error);
+        reject(error)
+      });
+       
+      imap.once('end', function() {
+        console.log('Connection ended');
+        resolve(emailsRead)
+      });
+    } catch (error) {
+      console.log('an error occurred' + error);
+      reject(error)
+    }
+  })
+}
+
+loadEmails()
+.then(data => {
+  fs.writeFileSync('read-emails.json', JSON.stringify(data))
+})
+.catch(error => {
+  console.log(error);
+})
