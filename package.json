@@ -20,7 +20,11 @@
   "dependencies": {
     "bluebird": "^3.7.2",
     "dotenv": "^16.0.3",
+    "imapflow": "^1.0.117",
     "mailparser": "^3.5.0",
     "node-imap": "^0.9.6"
+  },
+  "devDependencies": {
+    "@types/imapflow": "^1.0.11"
   }
 }
